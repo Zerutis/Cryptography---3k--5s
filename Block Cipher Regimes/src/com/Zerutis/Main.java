@@ -29,7 +29,7 @@ public class Main {
             {21, 239}, {3, 77}, {54, 200}, {17, 124}, {14, 204}, {33, 65}, {6, 232}, {20, 81}, {63, 208}, {27, 120},
             {9, 212}, {42, 70}, {16, 239}, {5, 68}};
 
-    static int[][] CRT = {
+    static int[][] CTR = {
             {248, 199}, {242, 214}, {253, 223}, {232, 221}, {240, 219}, {253, 199}, {242, 215}, {232, 198}, {245, 214},
             {232, 219}, {245, 216}, {238, 219}, {239, 209}, {253, 202}, {249, 200}, {234, 211}, {249, 220}, {253, 198},
             {243, 217}, {245, 208}, {249, 222}, {249, 217}, {245, 211}, {242, 198}, {232, 200}, {245, 213}, {247, 201},
@@ -42,70 +42,67 @@ public class Main {
         System.out.println(feistelCipherDecoderEBC(new int[]{218,64,180}));
         System.out.println(feistelCipherDecoderCBC(new int[]{218,64,180}, new int[]{30,107}));
         System.out.println(feistelCipherDecoderCFB(new int[]{218,64,180}, new int[]{30,107}));
-        //System.out.println(feistelCipherDecoderCRT());
+        System.out.println(feistelCipherDecoderCTR(new int[]{218,64,180}));
     }
 
-    static int funcEBC(int m, int k) { return (m|k)^((k/16)&m); }
-    static int funcCBC(int m, int k) { return (m|k)^((k/16)&m); }
-    static int funcCFB(int m, int k) { return (m|k)^((k/16)&m); }
-    static int funcCRT(int m, int k) { return (m|k)^((k/16)&m); }
+    static int func(int m, int k) { return (m|k)^((k/16)&m); }
+
 
     static String feistelCipherDecoderEBC(int[] key){
         String decoded = "";
-        for(int i = 0; i < EBC.length; i++){
-            int[] decryption = feistelCipher(EBC[i],key,true);
+        for (int[] e : EBC) {
+            int[] decryption = feistelCipherDecoder(e, key, true);
             decoded += String.valueOf((char) decryption[0]) + String.valueOf((char) decryption[1]);
         }
         return decoded;
     }
     static String feistelCipherDecoderCBC(int[] key, int[] iv){
         String decoded = "";
-        for(int i = 0; i < CBC.length; i++){
-            int[] decryption = feistelCipher(CBC[i],key,true);
+        for (int[] c : CBC) {
+            int[] decryption = feistelCipherDecoder(c, key, true);
             decryption[0] ^= iv[0];
             decryption[1] ^= iv[1];
             decoded += String.valueOf((char) decryption[0]) + String.valueOf((char) decryption[1]);
-            iv = CBC[i];
+            iv = c;
         }
         return decoded;
     }
     static String feistelCipherDecoderCFB(int[] key, int[] iv){
         String decoded = "";
-        for(int i = 0; i < CFB.length; i++){
-            int[] decryption = feistelCipherOpposite(iv,key,true);
-
-            int let1 = decryption[0] ^ CFB[i][0];
-            int let2 = decryption[1] ^ CFB[i][1];
+        for (int[] c : CFB) {
+            int[] decryption = feistelCipherEncoder(iv, key, true);
+            int let1 = decryption[0] ^ c[0];
+            int let2 = decryption[1] ^ c[1];
             decoded += String.valueOf((char) let1) + String.valueOf((char) let2);
-            iv = CFB[i];
+            iv = c;
         }
         return decoded;
     }
-    static String feistelCipherDecoderCRT(){
-        int[] key = {218, 64, 180};
+    static String feistelCipherDecoderCTR(int[] key){
         String decoded = "";
-        for(int i = 0; i < CRT.length; i++){
-            int L0 = CRT[i][0];
-            int R0 = CRT[i][1];
-            int L1 = R0;
-            int R1 = L0 ^ funcCRT(R0, key[2]);
-            int L2 = R1;
-            int R2 = L1 ^ funcCRT(R1, key[1]);
-            int L3 = R2;
-            int R3 = L2 ^ funcCRT(R2, key[0]);
+        int[] nonceCounter = {0,0};
 
-            decoded += String.valueOf((char) R3) + String.valueOf((char) L3);
+        for (int i =0; i < CTR.length; i++) {
+            nonceCounter[0] = func(i,key[0]);
+            nonceCounter[1] = func(i,key[0]);
+
+            int[] decryption = feistelCipherEncoder(nonceCounter, key, true);
+            int let1 = decryption[0] ^ CTR[i][0];
+            int let2 = decryption[1] ^ CTR[i][1];
+
+            decoded += String.valueOf((char) let1) + String.valueOf((char) let2);
+            nonceCounter[1]++;
         }
         return decoded;
     }
 
-    static int[] feistelCipher(int[] cipher, int[] key, boolean changeLast) {
+    static int[] feistelCipherDecoder(int[] cipher, int[] key, boolean changeLast) {
         int L = cipher[0];
         int R = cipher[1];
         for (int i = key.length-1; i >= 0; i--) {
             int T = L;
             L = R;
-            R = T ^ funcCFB(L, key[i]);
+            R = T ^ func(L, key[i]);
 
             if(i == 0 && changeLast){
                 T = L;
@@ -115,14 +112,13 @@ public class Main {
         }
         return new int[]{L,R};
     }
-
-    static int[] feistelCipherOpposite(int[] cipher, int[] key, boolean changeLast) {
+    static int[] feistelCipherEncoder(int[] cipher, int[] key, boolean changeLast) {
         int L = cipher[0];
         int R = cipher[1];
         for (int i = 0; i < key.length; i++) {
             int T = L;
             L = R;
-            R = T ^ funcCFB(L, key[i]);
+            R = T ^ func(L, key[i]);
 
             if(i == key.length-1 && changeLast){
                 T = L;
@@ -132,8 +128,6 @@ public class Main {
         }
         return new int[]{L,R};
     }
-
-
 }
 
 
