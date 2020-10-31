@@ -1,6 +1,5 @@
 package com.Zerutis;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,40 +30,63 @@ public class Main {
     static List<Integer> keyStream = new ArrayList<>();
 
     public static void main(String[] args) {
-        fillKeyStream(cipher1.length);
+        fillKeyStream(cipher1.length,'T','U');
         System.out.println(keyStream);
         System.out.println(streamCipher());
         clearKeyStream();
     }
 
-    static void fillKeyStream(int length){
-        keyStream.add(138);
-        keyStream.add(252);
+    static void fillKeyStream(int length, char firstLetter, char secondLetter){
+        keyStream.add(cipher1[0] ^ firstLetter);
+        keyStream.add(cipher1[1] ^ secondLetter);
+        int secretNumber = findSecret();
 
         for (int i = 2; i < length; i++) {
             int[] key = toArray(Integer.toBinaryString(keyStream.get(i-1)));
-            int[] cipher = toArray(Integer.toBinaryString(cipher1[i-1]));
-            int size = cipher.length - 1;
+            int[] secretCode = toArray(Integer.toBinaryString(secretNumber));
 
-           for (int j = 0; j < size; j++) {
-                int bit = 0;
-                for (int k = 0, l = size; k <= size; k++, l--) {
-                    bit += cipher[k] * key[l];
-                }
-                bit %= 2;
-                key = transform(key, bit);
-            }
-            keyStream.add(binaryToNumber(key));
+            keyStream.add(
+                    binaryToNumber(
+                            createNewKey(key,secretCode))
+            );
         }
     }
 
+    static int[] createNewKey(int[] key, int[] secretCode){
+        int size = key.length;
+        for (int j = 0; j < size; j++) {
+            int bit = 0;
+            for (int k = 0, l = size -1; k < size; k++, l--) {
+                bit += secretCode[k] * key[l];
+            }
+            bit %= 2;
+            key = transform(key, bit);
+        }
+        return key;
+    }
+
+    static int findSecret(){
+        int secretNumber = 0;
+        for (int i = 0; i < 255; i ++){
+            int temp = binaryToNumber(
+                    createNewKey(
+                            toArray(Integer.toBinaryString(keyStream.get(0))),
+                            toArray(Integer.toBinaryString(i)))
+            );
+            if (temp == keyStream.get(1)) {
+                secretNumber = i;
+                break;
+            }
+        }
+        return secretNumber;
+    }
     static int[] toArray(String binaryNum){
         char[] chars = binaryNum.toCharArray();
         int[] binary = new int[8];
         int i;
 
         if(binaryNum.length() != 8)
-            i = 7 - binaryNum.length();
+            i = 8 - binaryNum.length();
         else
             i = 0;
 
@@ -74,11 +96,12 @@ public class Main {
         return binary;
     }
     static int[] transform(int[] arr, int bit){
+        int[] newArr = new int[8];
         for(int i = 0; i < arr.length-1; i++){
-            arr[i] = arr[i+1];
+            newArr[i] = arr[i+1];
         }
-        arr[arr.length-1] = bit;
-        return arr;
+        newArr[newArr.length-1] = bit;
+        return newArr;
     }
     static int binaryToNumber(int[] arr){
         String number = "";
