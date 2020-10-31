@@ -5,7 +5,7 @@ import java.util.List;
 
 public class Main {
 
-    static int[] cipher1 =  {222, 169, 170, 97, 22, 146, 109, 24, 126, 232,
+     static int[] cipher =  {222, 169, 170, 97, 22, 146, 109, 24, 126, 232,
             136, 174, 1, 49, 65, 156, 34, 213, 168, 56, 37,
             200, 62, 118, 243, 120, 39, 145, 242, 170, 32,
             216, 84, 170, 185, 2, 209, 197, 23, 237, 46, 6,
@@ -16,7 +16,7 @@ public class Main {
             32, 228, 164, 161, 139, 130, 1, 187, 248, 213, 7,
             28, 181, 148, 24, 90, 116, 65};
 
-    static int[] A5_1 = {129, 120, 243, 125, 51, 135, 239, 187, 51, 208,
+     static int[] A5_1 = {129, 120, 243, 125, 51, 135, 239, 187, 51, 208,
             95, 182, 180, 21, 195, 197, 22, 240, 38, 27, 202,
             160, 193, 165, 67, 233, 158, 88, 152, 174, 128, 105,
             158, 58, 34, 35, 181, 236, 37, 138, 138, 121, 106,
@@ -27,99 +27,12 @@ public class Main {
             233, 104, 202};
 
 
-    static List<Integer> keyStream = new ArrayList<>();
-
     public static void main(String[] args) {
-        fillKeyStream(cipher1.length,'T','U');
-        System.out.println(keyStream);
-        System.out.println(streamCipher());
-        clearKeyStream();
-    }
-
-    static void fillKeyStream(int length, char firstLetter, char secondLetter){
-        keyStream.add(cipher1[0] ^ firstLetter);
-        keyStream.add(cipher1[1] ^ secondLetter);
-        int secretNumber = findSecret();
-
-        for (int i = 2; i < length; i++) {
-            int[] key = toArray(Integer.toBinaryString(keyStream.get(i-1)));
-            int[] secretCode = toArray(Integer.toBinaryString(secretNumber));
-
-            keyStream.add(
-                    binaryToNumber(
-                            createNewKey(key,secretCode))
-            );
-        }
-    }
-
-    static int[] createNewKey(int[] key, int[] secretCode){
-        int size = key.length;
-        for (int j = 0; j < size; j++) {
-            int bit = 0;
-            for (int k = 0, l = size -1; k < size; k++, l--) {
-                bit += secretCode[k] * key[l];
-            }
-            bit %= 2;
-            key = transform(key, bit);
-        }
-        return key;
-    }
-
-    static int findSecret(){
-        int secretNumber = 0;
-        for (int i = 0; i < 255; i ++){
-            int temp = binaryToNumber(
-                    createNewKey(
-                            toArray(Integer.toBinaryString(keyStream.get(0))),
-                            toArray(Integer.toBinaryString(i)))
-            );
-            if (temp == keyStream.get(1)) {
-                secretNumber = i;
-                break;
-            }
-        }
-        return secretNumber;
-    }
-    static int[] toArray(String binaryNum){
-        char[] chars = binaryNum.toCharArray();
-        int[] binary = new int[8];
-        int i;
-
-        if(binaryNum.length() != 8)
-            i = 8 - binaryNum.length();
-        else
-            i = 0;
-
-        for(char c : chars){
-            binary[i++] = Integer.parseInt(String.valueOf(c));
-        }
-        return binary;
-    }
-    static int[] transform(int[] arr, int bit){
-        int[] newArr = new int[8];
-        for(int i = 0; i < arr.length-1; i++){
-            newArr[i] = arr[i+1];
-        }
-        newArr[newArr.length-1] = bit;
-        return newArr;
-    }
-    static int binaryToNumber(int[] arr){
-        String number = "";
-        for(int a : arr){
-            number += Integer.toString(a);
-        }
-        return Integer.parseInt(number,2);
-    }
-
-    static void clearKeyStream(){ keyStream.clear(); }
-
-    static String streamCipher(){
-        String answer = "";
-        for(int i = 0; i < cipher1.length; i++){
-            int ASCII = cipher1[i] ^ keyStream.get(i);
-            answer += String.valueOf((char) ASCII);
-        }
-        return answer;
+        StreamCipher streamCipher = new StreamCipher();
+        // First part
+        streamCipher.fillKeyStream(cipher, cipher.length,'T','U');
+        System.out.println(streamCipher.streamCipher(cipher));
+        // Second part
     }
 }
 
