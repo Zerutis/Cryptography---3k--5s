@@ -32,6 +32,7 @@ public class Main {
         // First part
         streamCipher.fillKeyStream(cipher, cipher.length,'T','U');
         System.out.println(streamCipher.streamCipher(cipher));
+        streamCipher.clearKeyStream();
         // Second part
     }
 }
